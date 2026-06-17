@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import connectDB from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -24,12 +26,14 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
+// ─── Resolve __dirname for ES modules ─────────
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // ─── Connect to Database ──────────────────────
 connectDB();
 
 // ─── Middleware ───────────────────────────────
-
-// CORS
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
@@ -37,14 +41,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Cookie parsing
 app.use(cookieParser());
 
-// Session ID for guest tracking (analytics)
 app.use((req, res, next) => {
   if (!req.cookies.sessionId) {
     const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
@@ -90,6 +90,15 @@ app.use('/api/*', (req, res) => {
 // ─── Global Error Handler ─────────────────────
 app.use(errorHandler);
 
+// ─── Serve Static Frontend (Production) ───────
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../dist')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
+  });
+}
+
 // ─── Start Server ─────────────────────────────
 const PORT = process.env.PORT || 5000;
 
@@ -102,7 +111,6 @@ httpServer.listen(PORT, () => {
   console.log(`================================`);
 });
 
-// ─── Handle Unhandled Errors ──────────────────
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Rejection:', err.message);
   console.error(err.stack);
