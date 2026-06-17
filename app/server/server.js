@@ -3,8 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import connectDB from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -25,10 +23,6 @@ dotenv.config();
 // ─── Initialize ───────────────────────────────
 const app = express();
 const httpServer = createServer(app);
-
-// ─── Resolve __dirname for ES modules ─────────
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // ─── Connect to Database ──────────────────────
 connectDB();
@@ -95,17 +89,6 @@ app.use('/api/*', (req, res) => {
 
 // ─── Global Error Handler ─────────────────────
 app.use(errorHandler);
-
-// ─── Serve Static Frontend (Production) ───────
-// Only serve static files in production (Render)
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-  
-  // Handle React routing, return all non-API requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
-  });
-}
 
 // ─── Start Server ─────────────────────────────
 const PORT = process.env.PORT || 5000;
