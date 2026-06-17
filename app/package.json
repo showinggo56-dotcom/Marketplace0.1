@@ -94,8 +94,5 @@
     "vite": "^7.2.4",
     "nodemon": "^3.1.9",
     "concurrently": "^9.1.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
