@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 import connectDB from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -87,17 +88,33 @@ app.use('/api/*', (req, res) => {
   });
 });
 
-// ─── Global Error Handler ─────────────────────
-app.use(errorHandler);
+// ─── Serve Static Frontend ───────────────────
+const distPath = path.join(__dirname, '../dist');
+const distExists = fs.existsSync(distPath);
 
-// ─── Serve Static Frontend (Production) ───────
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
+if (distExists) {
+  app.use(express.static(distPath));
   
+  // Serve index.html for all non-API routes (SPA fallback)
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
+    res.sendFile(path.resolve(distPath, 'index.html'));
+  });
+} else {
+  console.warn('⚠️ WARNING: dist folder not found! Frontend will not be served.');
+  console.warn('⚠️ Make sure build step completed: npm run build');
+  
+  // Fallback: show message
+  app.get('/', (req, res) => {
+    res.status(503).json({
+      success: false,
+      message: 'Frontend build not found. Please rebuild the application.',
+      status: 'Building...'
+    });
   });
 }
+
+// ─── Global Error Handler ─────────────────────
+app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────
 const PORT = process.env.PORT || 5000;
@@ -108,6 +125,7 @@ httpServer.listen(PORT, () => {
   console.log(`  Port: ${PORT}`);
   console.log(`  Env:  ${process.env.NODE_ENV || 'development'}`);
   console.log(`  API:  http://localhost:${PORT}/api`);
+  console.log(`  Dist Folder: ${distExists ? 'Found ✓' : 'NOT FOUND ✗'}`);
   console.log(`================================`);
 });
 
