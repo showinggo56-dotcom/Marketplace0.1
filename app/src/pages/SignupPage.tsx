@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin, TokenResponse } from '@react-oauth/google';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -51,7 +51,7 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = useGoogleLogin({
-    onSuccess: async (codeResponse) => {
+    onSuccess: async (codeResponse: TokenResponse) => {
       setGoogleLoading(true);
       try {
         // Get user info from Google
